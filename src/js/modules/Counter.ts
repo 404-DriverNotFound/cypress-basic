@@ -1,6 +1,7 @@
-export default function Counter({ $app }) {
+/* eslint-disable no-param-reassign */
+export default function Counter({ $app: HTMLElement | null }) {
   const render = () => {
-    $app.innerHTML = `
+    $app. = `
        <div class="container">
           <h1>ui counter</h1>
           <div class="counter">
