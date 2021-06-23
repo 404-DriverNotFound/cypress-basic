@@ -8,5 +8,9 @@
     "eslint-config-airbnb-base": "^14.2.1",
     "eslint-plugin-import": "^2.23.4",
     "typescript": "^4.3.4"
+  },
+  "scripts": {
+    "build": "yarn tsc --watch",
+    "test": "yarn cypress open"
   }
 }
