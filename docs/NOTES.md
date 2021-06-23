@@ -1,0 +1,36 @@
+# 이론 정리
+## TS에서의 객체 구조 분해 할당
+- [참고](https://velog.io/@modolee/typeScript-destructuring#typescript%EC%97%90%EC%84%9C%EC%9D%98-destructuring)  
+
+``function Counter({ $app: HTMLElement | null })``처럼 입력하면 구조 분해 할당이 되지 않는다. 이러한 표현은 $app의 디폴트 값을 지정하는 문법으로 적용되기 때문이다.
+
+TS에서 구조 분해 할당을 하는 방법은 두 가지가 있다.
+  1. 구조 분해 할당 할 전체 변수에 대해 타입을 지정해주는 방법
+  ``function Counter({ $app }: { $app: HTMLElement | null })``
+  2. (권장) interface로 미리 타입을 정의하고 해당 interface를 타입으로 지정하는 방법
+     ```
+      interface App {
+        $app: HTMLElement | null
+      }
+
+      function Counter({ $app }: App) ...
+      ```
+
+<br>
+
+## Cypress에서 비동기를 포함하는 테스트 작성 시 주의점
+plus, minus 버튼에 EventListener를 등록한 뒤 테스트 코드를 작성하였는데, 어떨 때는 테스트가 정상적으로 진행되고 어떨 때는 의도하지 않은 값을 얻었다. [에러 메시지에 링크된 사이트](https://www.cypress.io/blog/2020/07/22/do-not-get-too-detached/)를 확인해보니 이 문제의 원인과 해결 방법을 알 수 있었다.
+### 원인
+테스트가 실패한 원인은 비동기 처리와 테스트 코드 실행 간의 순서가 정해져있지 않은 것이었다. 순서가 정해져 있지 않으니 어떨 때는 비동기 처리가 먼저 되어 테스트가 정상적으로 작동하였고, 어떨 때는 테스트가 먼저 실행되어 테스트가 원하지 않는 결과를 보여준 것이다. [링크](https://www.cypress.io/blog/2020/07/22/do-not-get-too-detached/#detached-elements)에서 좀 더 자세한 설명을 확인할 수 있다.
+
+### 해결법
+따라서 이 문제를 해결하려면 비동기 처리 이후 테스트가 실행되도록 테스트 코드를 수정해주어야 한다. 해결 방법은 생각보다 간단한데, 비동기 함수를 호출하는 동작 이후에 해당 element를 다시 get()으로 조회하면 된다. 이 또한 [링크](https://www.cypress.io/blog/2020/07/22/do-not-get-too-detached/#avoid-race-conditions)에서 자세한 설명을 확인할 수 있다.
+
+### 원리
+이렇게 적은 수정으로도 동기적 테스트가 가능한 이유는 **cy.get() 커맨드**의 [Retry-ability](https://docs.cypress.io/guides/core-concepts/retry-ability#Commands-vs-assertions)에서 찾을 수 있다. ``cy.get()`` 커맨드는 커맨드 실행이 성공했을 시 이어지는 assertion을 실행하지만, 커맨드 실행이 실패했을 시 command timeout이 될 때까지 ``.get()`` 커맨드를 재실행한다. 따라서 비동기 처리가 완료되는 것을 기다린 후 assertion을 실행하는 방식으로 실행되는 것이다.  
+``.find()``, ``.contains()`` 또한 retry하는 커맨드이고, 이외의 커맨드도 [Assertions section에서 retry 여부를 확인할 수 있다](https://docs.cypress.io/guides/core-concepts/retry-ability#Not-every-command-is-retried)고 한다.
+
+<br>
+
+## 기타
+- cy.get()의 경우 ``cy.``에 연결되어 있기 때문에 다른 커맨드에 chain해서 사용하여도 항상 ``document`` 전체에서 selector를 찾는다. 따라서 다른 element 뒤에 .get()을 chain하여도 js에서 child node를 찾는 것처럼 동작하지 않는다. 그러한 동작을 기대한다면 [``.within()`` 커맨드 내부에서 ``get()``을 실행](https://docs.cypress.io/api/commands/get#Get-in-within)하면 된다.
